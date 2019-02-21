@@ -1,0 +1,324 @@
+PUT /vehicles/car/123
+{
+  "make" : "Honda",
+  "Color": "Black",
+  "HP" : 250,
+  "milage" : 24000,
+  "price" : 19300.07
+}
+
+# Fetch entire response
+GET /vehicles/car/123
+
+# Only fetch source
+GET /vehicles/car/123/_source
+
+# Document Exists
+HEAD /vehicles/car/123
+HEAD /vehicles/car/124
+
+# Even to update specfic field we need to     reindex the entire document
+PUT /vehicles/car/123
+{
+  "make" : "Honda",
+  "Color": "Black",
+  "HP" : 250,
+  "milage" : 19000,
+  "price" : 19300.07
+}
+
+# Update 
+# Elastic search retives the document updates the exsisting document and then updates it.
+POST /vehicles/car/123/_update
+{
+  "doc" :  {
+    "price" : 193123.07
+  }
+}
+
+# Delete document
+# ES marks the document as delete. Purging of documents behind the scenes.
+DELETE /vehicles/car/123
+
+# DELETE Type , possible if there are any documents of type car.
+DELETE /vehicles/car
+
+# GET Index
+# ES creates it own structure.
+GET /vehicles
+
+DELETE /vehicles
+
+
+PUT /business/building/110
+{
+  "address" : "57 New Dover Ln",
+  "floors": 10,
+  "offices" : 21,
+  "loc" : {
+    "lat" : 40.707519, 
+    "lon" : -74.008560
+  }
+}
+
+PUT /business/building/217
+{
+  "address" : "11 Pen Ave",
+  "floors": 5,
+  "offices" : 7,
+  "loc" : {
+    "lat" : 40.693479, 
+    "lon" : -74.983854
+  }
+}
+
+# index representation
+GET  /business
+
+# Employee Type
+PUT /business/employee/330
+{
+  "name" : "Richard Bell",
+  "title" : "Senior Accountant",
+  "salary_usd" : 115000.00,
+  "hiredate" : "Jan 19, 2013"
+}
+
+
+PUT /business/employee/331
+{
+  "name" : "Steve Honor",
+  "title" : "Attorney",
+  "salary_usd" : 140000.00,
+  "hiredate" : "Oct 10, 2010"
+}
+
+GET  /business
+
+# Contract
+PUT /business/contract/9987
+{
+  "name" : "Property Renovation",
+  "date_signed" : "July 26 2010",
+  "employees_involved" : [331, 330, 398]
+}
+
+# Searching :
+GET  /business/_search
+
+# Searching for a Specfic type
+GET business/contract/_search
+GET business/employee/_search
+
+
+# Term Query 
+# Employees with given name :
+GET business/employee/_search
+{
+  "query" : {
+    "term" : {
+       "name" : "honor"
+    }
+  }
+}
+
+# Building with given address :
+GET business/building/_search
+{
+  "query" : {
+    "term" : {
+       "address" : "pen"
+    }
+  }
+}
+
+
+# Prod way to create a document
+
+# ADHOC document creation is not good practice.
+PUT /customers/online/123
+{
+  "name" : "Joe Swanson",
+  "gender" : "male",
+  "age" : 30,
+  "total_spent" : 255.20,
+  "is_new" : false 
+}
+
+DELETE /customers
+
+# Create own index settings
+PUT /customers
+{
+  "settings" : {
+    "number_of_shards": 2,
+    "number_of_replicas": 1
+  },
+  "mappings": {}
+}
+
+GET /customers
+
+# Creating online mapping
+PUT /customers/_mapping/online
+{
+  "properties" : {
+    "name" : {
+      "type" : "text",
+      "analyzer": "standard"
+    }
+  }
+}
+
+# Creating instore mapping
+PUT /customers/_mapping/instore
+{
+  "properties" : {
+    "name" : {
+      "type" : "text",
+      "analyzer": "standard"
+    }
+  }
+}
+# Adding more fields to instore mappings
+PUT /customers/_mapping/instore
+{
+  "properties": {
+    "gender" : {
+      "type": "text",
+      "analyzer": "standard"
+    },
+    "age" : {
+      "type": "integer"
+    },
+    "total_spent" : {
+      "type": "float"
+    },
+    "is_new" : {
+      "type": "boolean"
+    }
+  }
+}
+
+# Creating more fields to online mappings
+PUT /customers/_mapping/online
+{
+  "properties": {
+    "gender" : {
+      "type" : "text",
+      "analyzer": "standard"
+    },
+    "age" : {
+      "type": "integer"
+    },
+    "total_spent" : {
+      "type": "float"
+    },
+    "is_new" : {
+      "type": "boolean"
+    }
+  }
+}
+
+# Defining all the things together
+DELETE /customers
+PUT /customers
+{
+  "mappings": {
+    "online" : {
+      "properties": {
+          "name" : {
+            "type": "text",
+            "analyzer": "standard"
+          },
+          "gender" : {
+            "type" : "text",
+            "analyzer": "standard"
+          },
+          "age" : {
+            "type": "integer"
+          },
+          "total_spent" : {
+            "type": "float"
+          },
+          "is_new" : {
+            "type": "boolean"
+          }
+      }
+    }
+  },
+  "settings": {
+    "number_of_shards": 2,
+    "number_of_replicas": 1
+  }
+}
+
+# Adding customers to the above index. 
+# Notice a new field is added to the online index.
+PUT /customers/online/124
+{
+  "name" : "Mary Cranford",
+  "gender" : "female",
+  "address" :   "310 Clark Ave",
+  "age" : 34,
+  "total_spent" : 550.75,
+  "is_new" : false 
+}
+
+# Setting dynamic field
+# dynamic as false
+GET customers/_mapping/online
+{
+  "dynamic" : false
+}
+# dymnaic as strict
+GET customers/_mapping/online
+{
+  "dynamic" : "strict"
+}
+GET customers/
+
+# Now lets try adding a new field
+PUT /customers/online/124
+{
+  "name" : "Mary Cranford",
+  "gender" : "female",
+  "address" :   "310 Clark Ave",
+  "age" : 34,
+  "total_spent" : 550.75,
+  "is_new" : false,
+  "retired" : true
+}
+
+# Testing Analyizers 
+POST _analyze
+{
+  "analyzer": "standard",
+  "text":     "The quick brown746 fox."
+}
+
+POST _analyze
+{
+  "analyzer": "simple",
+  "text":     "The quick: brown746 fox."
+}
+
+POST _analyze
+{
+  "analyzer": "whitespace",
+  "text":     "The quick: brown746 fox."
+}
+
+POST _analyze
+{
+  "analyzer": "english",
+  "text":     "The quick: brown746 fox."
+}
+
+
+POST _analyze
+{
+  "tokenizer": "standard",
+  "filter":  [ "lowercase", "asciifolding" ],
+  "text":      "Is this déja vu?"
+}
